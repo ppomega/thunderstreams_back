@@ -5,7 +5,7 @@ async function AnimeInfoFetch(name) {
   const AnimeInfo = model(name);
   console.log(AnimeInfo);
   await mongoose
-    .connect(connString)
+    .connect(connString, { useMongoClient: true })
     .then(() => {})
     .catch((e) => {
       console.log("Error Encountered");
