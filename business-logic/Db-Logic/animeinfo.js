@@ -5,10 +5,10 @@ async function AnimeInfoFetch(name) {
   const AnimeInfo = model(name);
   console.log(AnimeInfo);
   await mongoose
-    .connect(connString, { useMongoClient: true })
+    .connect(connString)
     .then(() => {})
     .catch((e) => {
-      console.log("Error Encountered");
+      console.log(e);
     });
   const result = await AnimeInfo.find();
   delete mongoose.connection.models["AnimeInfo"];
