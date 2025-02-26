@@ -3,17 +3,14 @@ const connString = process.env.CONNECTION_STRING;
 const model = require("../../models/animeSeason");
 async function AnimeInfoFetch(name) {
   const AnimeInfo = model(name);
-  await mongoose
-    .connect(connString)
-    .then(() => {})
-    .catch((e) => {
-      console.log(e);
-    });
-  const result = await AnimeInfo.find();
-  mongoose.deleteModel("AnimeInfo");
+  await mongoose.connect(connString);
+  const result = await AnimeInfo.find().then(async (r) => {
+    mongoose.deleteModel("AnimeInfo");
+    await mongoose.connection.close();
+    return r;
+  });
   // delete mongoose.connection.models["AnimeInfo"];
 
-  await mongoose.connection.close();
   return result;
 }
 module.exports = AnimeInfoFetch;

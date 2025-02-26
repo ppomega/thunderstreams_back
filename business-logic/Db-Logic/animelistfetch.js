@@ -3,14 +3,11 @@ const connString = process.env.CONNECTION_STRING;
 
 const AnimeList = require("../../models/animeList");
 async function AnimeFetch() {
-  await mongoose
-    .connect(connString)
-    .then(() => {})
-    .catch((e) => {
-      console.log("Error");
-    });
-  const result = await AnimeList.find();
-  await mongoose.connection.close();
+  await mongoose.connect(connString);
+  await AnimeList.find().then(async (r) => {
+    await mongoose.connection.close();
+    return r;
+  });
   return result;
 }
 module.exports = AnimeFetch;
