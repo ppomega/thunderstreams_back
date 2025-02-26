@@ -10,7 +10,9 @@ app.use(cors());
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
-app.get("/", (req, res) => {});
+app.get("/", (req, res) => {
+  res.send("hello");
+});
 app.get("/animeInfo", async (req, res) => {
   const name = req.query;
   console.log(name.name);

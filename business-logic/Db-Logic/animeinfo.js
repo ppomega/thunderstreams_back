@@ -4,7 +4,7 @@ const model = require("../../models/animeSeason");
 async function AnimeInfoFetch(name) {
   const AnimeInfo = model(name);
   await mongoose.connect(connString);
-  const result = await AnimeInfo.find().then(async (r) => {
+  return await AnimeInfo.find().then(async (r) => {
     mongoose.deleteModel("AnimeInfo");
     return r;
   });
