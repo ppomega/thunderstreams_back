@@ -8,6 +8,5 @@ async function AnimeFetch() {
     await mongoose.connection.close();
     return r;
   });
-  return result;
 }
 module.exports = AnimeFetch;
