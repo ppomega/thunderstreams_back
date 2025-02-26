@@ -6,7 +6,6 @@ async function AnimeInfoFetch(name) {
   await mongoose.connect(connString);
   const result = await AnimeInfo.find().then(async (r) => {
     mongoose.deleteModel("AnimeInfo");
-    await mongoose.connection.close();
     return r;
   });
   // delete mongoose.connection.models["AnimeInfo"];
