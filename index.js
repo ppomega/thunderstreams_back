@@ -1,4 +1,5 @@
 const express = require("express");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 var cors = require("cors");
 const { spawn } = require("child_process");
 require("dotenv").config(); // Load .env variables
@@ -10,7 +11,7 @@ const PORT = process.env.PORT;
 app.use(cors());
 
 function streamToExoPlayer(inputStream, res) {
-  const ffmpeg = spawn("ffmpeg", [
+  const ffmpeg = spawn(ffmpegPath, [
     "-i",
     "pipe:0",
     "-c:v",

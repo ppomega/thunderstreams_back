@@ -9,6 +9,7 @@
   "author": "Prateek Veerbhan",
   "license": "ISC",
   "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "axios": "^1.7.9",
     "backend": "file:",
     "cors": "^2.8.5",
