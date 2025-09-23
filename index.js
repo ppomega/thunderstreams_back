@@ -48,7 +48,7 @@ function streamToExoPlayer(inputStream, res) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Server is running  http://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
 
 app.get("/", (req, res) => {
@@ -89,6 +89,7 @@ app.get("/:disk/:name/:ep/:file", async (req, res) => {
 
 app.get("/:disk/:cat/:name/:ep/:file", async (req, res) => {
   try {
+    console.log(req.params);
     const path =
       req.params.disk +
       "/" +
@@ -99,6 +100,7 @@ app.get("/:disk/:cat/:name/:ep/:file", async (req, res) => {
       req.params.ep +
       "/" +
       req.params.file;
+    console.log(path);
     const chunk = await fetch(path);
     if (req.params.file.endsWith(".mpd")) {
       chunk.data.pipe(res);
