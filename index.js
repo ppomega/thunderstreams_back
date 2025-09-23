@@ -11,24 +11,17 @@ const PORT = process.env.PORT;
 app.use(cors());
 
 function streamToExoPlayer(inputStream, res) {
-  const ffmpeg = spawn(ffmpegPath, [
+  // Spawn FFmpeg to remux without re-encoding
+  const ffmpeg = spawn(ffmpegPath.path, [
     "-i",
-    "pipe:0",
-    "-c:v",
-    "libx264",
-    "-profile:v",
-    "main",
-    "-pix_fmt",
-    "yuv420p",
-    "-c:a",
-    "aac",
-    "-b:a",
-    "128k",
+    "pipe:0", // input from stream
+    "-c",
+    "copy", // copy both video and audio as-is
     "-f",
-    "mp4",
+    "mp4", // output format
     "-movflags",
     "frag_keyframe+empty_moov+default_base_moof",
-    "pipe:1",
+    "pipe:1", // output to stdout
   ]);
 
   // Pipe your input stream into FFmpeg stdin
@@ -38,14 +31,22 @@ function streamToExoPlayer(inputStream, res) {
   res.setHeader("Content-Type", "video/mp4");
   ffmpeg.stdout.pipe(res);
 
+  // Log FFmpeg errors
   ffmpeg.stderr.on("data", (data) => {
-    console.error(`FFmpeg stderr: ${data}`);
+    console.error(`FFmpeg stderr: ${data.toString()}`);
   });
 
+  // Handle FFmpeg process exit
   ffmpeg.on("close", (code) => {
     console.log(`FFmpeg exited with code ${code}`);
   });
+
+  ffmpeg.on("error", (err) => {
+    console.error("FFmpeg spawn error:", err);
+    res.end();
+  });
 }
+
 app.listen(PORT, () => {
   console.log(`Server is running  http://localhost:${PORT}`);
 });
