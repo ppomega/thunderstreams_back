@@ -13,22 +13,22 @@ app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
 
-app.get("/", (req, res) => {
+app.get("/", (req:any, res:any) => {
   res.send("hello");
 });
 
-app.get("/animeInfo", async (req, res) => {
+app.get("/animeInfo", async (req:any, res:any) => {
   const name = req.query;
   console.log(name.name);
   const data = await AnimeInfoFetch(name.name);
   res.send(data);
 });
 
-app.get("/assets", async (req, res) => {
+app.get("/assets", async (req:any, res:any) => {
   res.json(await AnimeFetch());
 });
 
-app.get("/:disk/:name/:ep/:file", async (req, res) => {
+app.get("/:disk/:name/:ep/:file", async (req:any, res:any) => {
   try {
     console.log(req.params);
     const path =
@@ -45,7 +45,7 @@ app.get("/:disk/:name/:ep/:file", async (req, res) => {
   } catch (e) {}
 });
 
-app.get("/:disk/:cat/:name/:ep/:file", async (req, res) => {
+app.get("/:disk/:cat/:name/:ep/:file", async (req:any, res:any) => {
   try {
     console.log(req.params);
     const path =
@@ -64,7 +64,7 @@ app.get("/:disk/:cat/:name/:ep/:file", async (req, res) => {
       } catch (e) {}
 });
 
-app.get("/file", async (req, res) => {
+app.get("/file", async (req:any, res:any) => {
   try {
     console.log(req.query.name);
     const file = await fetch(req.query.name);
