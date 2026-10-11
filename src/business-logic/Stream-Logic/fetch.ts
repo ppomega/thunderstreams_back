@@ -1,11 +1,13 @@
-const axios = require("axios");
-const crypto = require("crypto-js");
-async function Fetch(path) {
-  const accessKeyId = process.env.SECRET_ID;
-  const secretAccessKey = process.env.SECRET_KEY;
+import axios from "axios";
+import type { AxiosRequestConfig } from "axios";
+import crypto from "crypto-js";
+
+async function Fetch(path:string): Promise<any> {
+  const accessKeyId:string|undefined = process.env.SECRET_ID;
+  const secretAccessKey:string|undefined = process.env.SECRET_KEY;
   const region = "auto";
   const service = "s3";
-  const host = process.env.HOST; // Replace with your Cloudflare account ID
+  const host:string|undefined = process.env.HOST; // Replace with your Cloudflare account ID
   const method = "GET";
   const currentDate = new Date();
 
@@ -25,7 +27,7 @@ async function Fetch(path) {
   const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto
     .SHA256(canonicalRequest)
     .toString(crypto.enc.Hex)}`;
-  function getSignatureKey(key, dateStamp, regionName, serviceName) {
+  function getSignatureKey(key:string|undefined, dateStamp:string, regionName:string, serviceName:string) {
     const kDate = crypto.HmacSHA256(dateStamp, "AWS4" + key);
     const kRegion = crypto.HmacSHA256(regionName, kDate);
     const kService = crypto.HmacSHA256(serviceName, kRegion);
@@ -43,7 +45,7 @@ async function Fetch(path) {
     .toString(crypto.enc.Hex);
 
   const authorizationHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-  let config = {
+  let config: AxiosRequestConfig = {
     method: "GET",
     url: `https://${host}/thunder-streams/${path}`,
     headers: {
