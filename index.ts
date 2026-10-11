@@ -1,5 +1,5 @@
-const express = require("express");
-var cors = require("cors");
+import express from "express";
+import cors from "cors";
 require("dotenv").config(); // Load .env variables
 const fetch = require("./business-logic/Stream-Logic/fetch");
 const AnimeFetch = require("./business-logic/Db-Logic/animelistfetch");
