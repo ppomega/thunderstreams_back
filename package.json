@@ -17,7 +17,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.0",
     "mongoose": "^8.10.1",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
     "wrangler": "^3.80.4"
