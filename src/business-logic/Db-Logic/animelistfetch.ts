@@ -12,4 +12,4 @@ async function AnimeFetch(): Promise<mongoose.Document[] | undefined> {
       console.log(e);
     });}
 }
-module.exports = AnimeFetch;
+export default AnimeFetch;

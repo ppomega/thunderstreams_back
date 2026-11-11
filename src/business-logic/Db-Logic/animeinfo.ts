@@ -13,4 +13,4 @@ async function AnimeInfoFetch(name:string): Promise<mongoose.Document[] | undefi
   });
 }
 }
-module.exports = AnimeInfoFetch;
+export default  AnimeInfoFetch;
