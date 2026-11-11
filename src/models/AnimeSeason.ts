@@ -1,14 +1,14 @@
 import { Schema, model, Types ,Model} from 'mongoose';
-import {Episode} from "./Episode.js";
+import { EpisodeSchema, type Episode } from "./Episode.js";
 interface  AnimeInfo{
 seasonNumber: number;
-episodes: Types.DocumentArray<typeof Episode>;
+episodes: Types.DocumentArray<Episode>;
 }
 function createModel(name:string): Model<AnimeInfo> {
   const list = new Schema<AnimeInfo>(
     {
       seasonNumber: Number,
-      episodes: [Episode],
+      episodes: [EpisodeSchema],
     },
     { collection: name }
   );
