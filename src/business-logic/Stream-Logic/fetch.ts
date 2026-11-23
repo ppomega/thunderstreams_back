@@ -62,11 +62,9 @@ async function Fetch(path: string, range?: string): Promise<any> {
     maxContentLength: Infinity,
     maxBodyLength: Infinity,
   };
-  try {
-    return await axios.request(config);
-  } catch (e) {
-    throw e;
-  }
+  // Let the caller handle the upstream status. Returning undefined here turns
+  // an R2 404 into a secondary "cannot read headers" error in the route.
+  return await axios.request(config);
 }
 
 export default Fetch;

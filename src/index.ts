@@ -107,6 +107,9 @@ async function streamPath(path: string, req: Request, res: Response) {
   try {
     const range = req.header("range");
     const chunk = await streamFetch(path, range);
+    if (!chunk?.data) {
+      throw new Error("Object storage returned an empty response");
+    }
     const headers = chunk.headers ?? {};
     for (const header of [
       "content-type",
@@ -126,8 +129,13 @@ async function streamPath(path: string, req: Request, res: Response) {
     });
     chunk.data.pipe(res);
   } catch (e) {
-    console.error(e);
-    if (!res.headersSent) res.status(404).json({ error: "File not found" });
+    const upstreamStatus = (e as { response?: { status?: number } })?.response?.status;
+    console.error(`Object storage fetch failed for "${path}" with status ${upstreamStatus ?? "unavailable"}`, e);
+    if (!res.headersSent) {
+      res.status(upstreamStatus === 404 ? 404 : 502).json({
+        error: upstreamStatus === 404 ? "File not found in object storage" : "Failed to fetch file from object storage",
+      });
+    }
   }
 }
 
