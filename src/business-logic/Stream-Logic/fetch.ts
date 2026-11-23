@@ -2,7 +2,7 @@ import axios from "axios";
 import type { AxiosRequestConfig } from "axios";
 import crypto from "crypto-js";
 
-async function Fetch(path:string): Promise<any> {
+async function Fetch(path: string, range?: string): Promise<any> {
   const accessKeyId:string|undefined = process.env.SECRET_ID;
   const secretAccessKey:string|undefined = process.env.SECRET_KEY;
   const region = "auto";
@@ -18,10 +18,13 @@ async function Fetch(path:string): Promise<any> {
       .substr(0, 15) + "Z";
   const dateStamp = amzDate.substr(0, 8);
   var payloadHash = "UNSIGNED-PAYLOAD";
-  const canonicalUri = `/thunder-streams/${path}\n`;
+  // S3 signs the URL-encoded path. Keep slashes as separators, but encode each
+  // object-key segment so names containing spaces or other reserved chars work.
+  const objectPath = path.split("/").map((part) => encodeURIComponent(part)).join("/");
+  const canonicalUri = `/thunder-streams/${objectPath}`;
   const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-  const canonicalRequest = `${method}\n${canonicalUri}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+  const canonicalRequest = `${method}\n${canonicalUri}\n\n${canonicalHeaders}${signedHeaders}\n${payloadHash}`;
   const algorithm = "AWS4-HMAC-SHA256";
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
   const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto
@@ -47,23 +50,22 @@ async function Fetch(path:string): Promise<any> {
   const authorizationHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
   let config: AxiosRequestConfig = {
     method: "GET",
-    url: `https://${host}/thunder-streams/${path}`,
+    url: `https://${host}/thunder-streams/${objectPath}`,
     headers: {
       Authorization: authorizationHeader,
       Host: host,
       "x-amz-content-sha256": payloadHash,
       "x-amz-date": amzDate,
+      ...(range ? { Range: range } : {}),
     },
     responseType: "stream",
     maxContentLength: Infinity,
     maxBodyLength: Infinity,
   };
   try {
-    const t = await axios.request(config);
-    return t;
+    return await axios.request(config);
   } catch (e) {
-    console.log(e);
-  }
+    throw e;
 }
 
 export default Fetch;

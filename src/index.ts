@@ -38,16 +38,26 @@ app.get("/assets", async (_req: Request, res: Response) => {
 });
 
 // Shared streaming helper
-async function streamPath(path: string, res: Response) {
+async function streamPath(path: string, req: Request, res: Response) {
   // basic path traversal guard
   if (path.split("/").some((seg) => seg === ".." || seg === "")) {
     return res.status(400).json({ error: "Invalid path" });
   }
   try {
-    const chunk = await streamFetch(path);
-    if (chunk.headers?.["content-type"]) {
-      res.setHeader("Content-Type", chunk.headers["content-type"]);
+    const range = req.header("range");
+    const chunk = await streamFetch(path, range);
+    const headers = chunk.headers ?? {};
+    for (const header of [
+      "content-type",
+      "content-length",
+      "content-range",
+      "accept-ranges",
+      "last-modified",
+      "etag",
+    ]) {
+      if (headers[header]) res.setHeader(header, headers[header]);
     }
+    res.status(chunk.status);
     chunk.data.on("error", (err: Error) => {
       console.error(err);
       if (!res.headersSent) res.sendStatus(500);
@@ -66,17 +76,17 @@ app.get("/file", async (req: Request, res: Response) => {
   if (typeof name !== "string" || !name) {
     return res.status(400).json({ error: "name query param is required" });
   }
-  await streamPath(name, res);
+  await streamPath(name, req, res);
 });
 
 app.get("/:disk/:name/:ep/:file", async (req: Request, res: Response) => {
   const { disk, name, ep, file } = req.params;
-  await streamPath([disk, name, ep, file].join("/"), res);
+  await streamPath([disk, name, ep, file].join("/"), req, res);
 });
 
 app.get("/:disk/:cat/:name/:ep/:file", async (req: Request, res: Response) => {
   const { disk, cat, name, ep, file } = req.params;
-  await streamPath([disk, cat, name, ep, file].join("/"), res);
+  await streamPath([disk, cat, name, ep, file].join("/"), req, res);
 });
 
 app.listen(PORT, () => {
