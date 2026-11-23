@@ -1,12 +1,16 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import "dotenv/config";
+import { spawn } from "node:child_process";
+import ffmpeg from "@ffmpeg-installer/ffmpeg";
 import streamFetch from "./business-logic/Stream-Logic/fetch.js";
 import AnimeFetch from "./business-logic/Db-Logic/animelistfetch.js";
 import AnimeInfoFetch from "./business-logic/Db-Logic/animeinfo.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const thumbnailCache = new Map<string, Buffer>();
+const thumbnailJobs = new Map<string, Promise<Buffer>>();
 
 app.use(cors());
 
@@ -34,6 +38,63 @@ app.get("/assets", async (_req: Request, res: Response) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to fetch assets" });
+  }
+});
+
+async function captureEpisodeFrame(manifestUrl: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const process = spawn(ffmpeg.path, [
+      "-hide_banner", "-loglevel", "error", "-ss", "5", "-i", manifestUrl,
+      "-frames:v", "1", "-vf", "scale=640:-2", "-f", "image2pipe", "-vcodec", "mjpeg", "pipe:1",
+    ]);
+    const chunks: Buffer[] = [];
+    let errors = "";
+    const timeout = setTimeout(() => process.kill("SIGKILL"), 25000);
+    process.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+    process.stderr.on("data", (chunk: Buffer) => { errors += chunk.toString(); });
+    process.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    process.on("close", (code) => {
+      clearTimeout(timeout);
+      const image = Buffer.concat(chunks);
+      if (code === 0 && image.length) resolve(image);
+      else reject(new Error(errors || `ffmpeg exited with code ${code}`));
+    });
+  });
+}
+
+app.get("/episode-thumbnail", async (req: Request, res: Response) => {
+  const requestedPath = req.query.path;
+  const path = typeof requestedPath === "string" ? requestedPath.replace(/\/+$/, "") : "";
+  if (!path || path.startsWith("/") || path.split("/").some((part) => part === ".." || part === "") || path.split("/").length < 3) {
+    return res.status(400).json({ error: "A valid episode path is required" });
+  }
+
+  const cacheKey = path;
+  try {
+    let image = thumbnailCache.get(cacheKey);
+    if (!image) {
+      let job = thumbnailJobs.get(cacheKey);
+      if (!job) {
+        const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+        const manifestUrl = `http://127.0.0.1:${PORT}/${encodedPath}/output.mpd`;
+        job = captureEpisodeFrame(manifestUrl);
+        thumbnailJobs.set(cacheKey, job);
+      }
+      image = await job;
+      thumbnailCache.set(cacheKey, image);
+      if (thumbnailCache.size > 200) thumbnailCache.delete(thumbnailCache.keys().next().value!);
+      thumbnailJobs.delete(cacheKey);
+    }
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(image);
+  } catch (error) {
+    thumbnailJobs.delete(cacheKey);
+    console.error("Failed to capture episode thumbnail", error);
+    res.status(502).json({ error: "Could not capture a frame from this episode" });
   }
 });
 

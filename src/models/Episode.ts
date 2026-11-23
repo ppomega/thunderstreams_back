@@ -1,6 +1,7 @@
 import { Schema, model, Types } from 'mongoose';
 export interface Episode {
   episodeNumber: number;
+  path: string;
   title: string;
   length: string;
   description: string;
@@ -8,6 +9,7 @@ export interface Episode {
 }
 export const EpisodeSchema = new Schema<Episode>({
   episodeNumber: { type: Number, required: true },
+  path: { type: String, required: true },
   title: { type: String, required: true },
   length: { type: String, required: true },
   description: { type: String, required: true },
