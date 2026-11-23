@@ -8,6 +8,9 @@ async function Fetch(path: string, range?: string): Promise<any> {
   const region = "auto";
   const service = "s3";
   const host:string|undefined = process.env.HOST; // Replace with your Cloudflare account ID
+  if (!accessKeyId || !secretAccessKey || !host) {
+    throw new Error("R2 signing configuration is incomplete");
+  }
   const method = "GET";
   const currentDate = new Date();
 
@@ -17,14 +20,27 @@ async function Fetch(path: string, range?: string): Promise<any> {
       .replace(/[:-]|\.\d{3}/g, "")
       .substr(0, 15) + "Z";
   const dateStamp = amzDate.substr(0, 8);
-  var payloadHash = "UNSIGNED-PAYLOAD";
+  const payloadHash = "UNSIGNED-PAYLOAD";
   // S3 signs the URL-encoded path. Keep slashes as separators, but encode each
-  // object-key segment so names containing spaces or other reserved chars work.
-  const objectPath = path.split("/").map((part) => encodeURIComponent(part)).join("/");
+  // object-key segment with RFC 3986 encoding (encodeURIComponent leaves !'()*).
+  const encodePathSegment = (part: string) =>
+    encodeURIComponent(part).replace(/[!'()*]/g, (char) =>
+      `%${char.charCodeAt(0).toString(16).toUpperCase()}`
+    );
+  const objectPath = path.split("/").map(encodePathSegment).join("/");
   const canonicalUri = `/thunder-streams/${objectPath}`;
   const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-  const canonicalRequest = `${method}\n${canonicalUri}\n\n${canonicalHeaders}${signedHeaders}\n${payloadHash}`;
+  // canonicalHeaders already ends in a newline. The additional separator
+  // newline required by SigV4 must remain before SignedHeaders.
+  const canonicalRequest = [
+    method,
+    canonicalUri,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
   const algorithm = "AWS4-HMAC-SHA256";
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
   const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto
