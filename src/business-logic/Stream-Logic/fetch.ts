@@ -66,6 +66,7 @@ async function Fetch(path: string, range?: string): Promise<any> {
     return await axios.request(config);
   } catch (e) {
     throw e;
+  }
 }
 
 export default Fetch;
